@@ -71,4 +71,10 @@ public class Client extends BddObject {
         return new Model_view("Test.jsp");
     }
 
+    @Link(url="testMethod")
+    public Model_view andrana(String bogos,String sipa){
+        System.out.println(bogos+" sy "+sipa);
+        return new Model_view("Test.jsp");
+    }
+
 }
