@@ -8,7 +8,11 @@
 <h1><%= "Hello World!" %>
 </h1>
 <br/>
-<form action="insertClient" method="post">
+<form action="dept-save" method="post">
+    <input type="text" name="nom"><br>
+    <br>
+    <input type="text" name="chef"><br><br>
+
     <input type="submit" value="submit">
 </form>
 </body>

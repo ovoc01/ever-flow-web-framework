@@ -1,27 +1,25 @@
 package etu2074.framework.servlet;
-import etu2074.framework.controller.Model_view;
+import etu2074.framework.annotations.RequestParameter;
+import etu2074.framework.controller.ModelView;
 import etu2074.framework.loader.Loader;
 import etu2074.framework.mapping.Mapping;
-import etu2074.framework.url.Link;
+import etu2074.framework.annotations.Link;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
+import com.ovoc01.dao.utilities.Utilities;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import testFramework.Employe;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 
-import static testFramework.Employe.dynamicCast;
 
 public class FrontServlet extends HttpServlet {
     private HttpServletRequest httpServletRequest;
@@ -72,11 +70,9 @@ public class FrontServlet extends HttpServlet {
         Set<Class> classSet = null;
         classSet = Loader.findAllClasses(paths);
         for(Class classes:classSet){
-            System.out.println(classes.getName());
             Method[]methods = classes.getMethods();
             for (Method method:methods) {
                 Link link = method.getAnnotation(Link.class);
-              //  System.out.println(method.getName());
                 if(link!=null){
                     mappingUrl.put(link.url(),new Mapping(classes.getName(),method,classes));
                 }
@@ -85,7 +81,7 @@ public class FrontServlet extends HttpServlet {
     }
     private void retrieveAllMappedMethod() throws URISyntaxException, ClassNotFoundException {
         Set<Class> classSet = null;
-            classSet = Loader.findAllClasses("etu2074.framework.controller");
+        classSet = Loader.findAllClasses("etu2074.framework.controller");
         for(Class classes:classSet){
             Method[]methods = classes.getMethods();
             for (Method method:methods) {
@@ -115,19 +111,72 @@ public class FrontServlet extends HttpServlet {
             writer.println("<br>");
             HashMap<String,Mapping> list = getMappingUrl();
             writer.println(list);
-            Model_view modelView = processRequest(request);
+            ModelView modelView = redirection(request);
             if(modelView!=null){
                 if(!modelView.getData().isEmpty()) addDataToRequest(modelView.getData());
                 dispatch(modelView.getView());
             }
-            redirection(request);
+            //redirection(request);
         }catch (Exception e){
             e.printStackTrace();
         }
     }
 
+    private void instantiateObjectParameter(Map<String,String[]>requestParameter,Object object) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Field[] fields = object.getClass().getDeclaredFields();//maka ny attribut rehetra declarer ao @ ilay objet
+        Method[] methods = object.getClass().getDeclaredMethods();
+        for (Field field:fields) {
+            String [] parameter = requestParameter.get(field.getName());
+            if(parameter!=null){
+                String setter = Utilities.createSetter(field.getName());
+                Method method_setter = stringMatchingMethod(methods,setter);
+                Class<?>[]method_parameter = arrayMethodParameter(method_setter);
+                method_setter.invoke(object,dynamicCast(method_parameter,parameter));
+            }
+        }
+    }
 
+    /**
+     * function who dynamically cast an Object with the matching classes
+     * @param classes
+     * @param args
+     * @return Object array
+     */
 
+    private Object [] dynamicCast(Class<?>[]classes,Object[]args){
+        Object[] array = new Object[classes.length];
+        int i = 0;
+        for (Class<?> cl:classes) {
+            System.out.println(args.getClass());
+            array[i] = cl.cast(args[i]);
+            i++;
+        }
+        return array;
+    }
+    private Method stringMatchingMethod(Method[] methods,String method_name){
+        Method matchingMethod = null;
+        for (Method method:methods) {
+            if(method.getName().equals(method_name)){
+            //System.out.println(method.getName());
+                return method;
+            }
+        }
+        return null;
+    }
+
+    private   Class<?>[] arrayMethodParameter(Method method) {
+        // Get the parameters of the method
+        Parameter[] parameters = method.getParameters();
+        // Create an array to store the classes of the parameter instances
+        Class<?>[] paramClasses = new Class<?>[parameters.length];
+        // Iterate through the parameters and get their classes
+        for (int i = 0; i < parameters.length; i++) {
+            paramClasses[i] = parameters[i].getType();
+            //System.out.println(parameters[i].getType());
+        }
+        // Return the array of parameter classes
+        return paramClasses;
+    }
     private void addDataToRequest(HashMap<String,Object>data)
     {
         for (Map.Entry<String,Object>value:data.entrySet()){
@@ -135,89 +184,80 @@ public class FrontServlet extends HttpServlet {
         }
     }
 
-
-    @Deprecated
-    private Model_view redirection(HttpServletRequest request) throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+    private ModelView redirection(HttpServletRequest request) throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         Vector<String> links = retrieveRequestUrl(request);
+        Map<String,String[]> requestParameter = request.getParameterMap();
         if(!links.isEmpty()){
             Mapping objectMapping = mappingUrl.get(links.get(0));
             if(objectMapping!=null){
                 Object temp = objectMapping.getaClass().newInstance();
-                Link link = objectMapping.getMethod().getAnnotation(Link.class);
-                Model_view model_view= null;
-                if(link.method().equals("POST")){
-                    model_view= (Model_view) temp.getClass().getMethod(objectMapping.getMethod().getName(),HttpServletRequest.class).invoke(temp,request);
-                }else{
-                    model_view= (Model_view) temp.getClass().getMethod(objectMapping.getMethod().getName()).invoke(temp);
-                }
-                model_view.setMethod(link.method());
-                return model_view;
+                instantiateObjectParameter(requestParameter,temp);
+                Method calledMethod = objectMapping.getMethod();
+                System.out.println(calledMethod);
+                //ModelView model_view= (ModelView) calledMethod.invoke(temp);
+                ModelView modelView = invokeMethod(calledMethod,temp,requestParameter);
+                return modelView;
             }
         }
         return null;
     }
 
-    /**
-     * Returns the mapping object for the specified URL.
-     */
-    private Mapping getMapping(String url) {
-        return mappingUrl.get(url);
-    }
-
-    /**
-     * Instantiates an object of the specified class.
-     */
-    private Object instantiate(Class<?> clazz) throws InstantiationException, IllegalAccessException {
-        return clazz.newInstance();
-    }
-
-    /**
-     * Invokes the specified method on the specified object with the specified request.
-     * Throws an exception if the Link method does not match the HttpServletRequest method.
-     */
-    private Model_view invokeMethod(Object object, Method method,HashMap<Method,HashMap<String,Class<?>>>method_parameter, HttpServletRequest request) throws IllegalAccessException, InvocationTargetException {
-        Link link = method.getAnnotation(Link.class);
-        if (!link.method().equals(request.getMethod())) {
-            throw new IllegalStateException("Link method (" + link.method() + ") does not match HttpServletRequest method (" + request.getMethod() + ")");
+    private ModelView invokeMethod(Method method,Object object,Map<String,String[]> requestParameter) throws InvocationTargetException, IllegalAccessException {
+        Vector<Parameter> parameters =  annotedMethodParameters(method);//maka ny parametre rehetra anle fonction
+        ModelView modelView = (ModelView) method.invoke(object);
+        System.out.println(parameters);
+        if(!parameters.isEmpty()){
+          //  System.out.println("1");
+            Class<?>[] parameterClasses = parametersClass(parameters);//maka ny class anle parametre
+            //System.out.println("2");
+            Object[] parameterValue = requestParamAttr(parameters,requestParameter);
+            //System.out.println("3");
+            modelView = (ModelView) method.invoke(object,dynamicCast(parameterClasses,parameterValue));//
+            //System.out.println("4");
+            System.out.println(modelView);
         }
-        Model_view model_view = null;
-        Map<String,String[]> request_parameter = request.getParameterMap(); //maka ny Map ny parametre rehetra nalefa tanaty requete
-        model_view = requestMethod_matching(object,method,request_parameter,method_parameter);
-        model_view.setMethod(link.method());
-        return model_view;
+        return modelView;
     }
 
-    /**
-     * Processes the specified request and returns the corresponding model view.
-     */
-    private Model_view processRequest(HttpServletRequest request) throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        Vector<String> links = retrieveRequestUrl(request); //maka anle mapping url
-        if (!links.isEmpty()) {
-            Mapping objectMapping = getMapping(links.get(0)); //maka anle Mapping correspondant amle url nalaina tatsy ambony
-            if (objectMapping != null) {
-                Object temp = instantiate(objectMapping.getaClass());
-                Method method = objectMapping.getMethod();
-                return invokeMethod(temp, method,objectMapping.getMethod_parameter(), request);
-            }
+    private Object[] requestParamAttr(Vector<Parameter> parameterVector,Map<String,String[]> requestParameter){
+        Vector<Object> objectVector =  new Vector<>();
+        for (Parameter params: parameterVector) {
+            String[] val = requestParameter.get(params.getAnnotation(RequestParameter.class).name());//maka an'ilay anle valeur anle
+            //System.out.println(val[0]);
+            objectVector.add(val[0]);// atao anaty anilay Vector daoly na null na tsy null
         }
-        return null;
+        return objectVector.toArray(new Object[0]);
     }
 
-    private Model_view requestMethod_matching(Object object,Method method,Map<String,String[]>request_params,HashMap<Method,HashMap<String,Class<?>>>method_parameter) throws InvocationTargetException, IllegalAccessException {
-        if(method_parameter.size()>request_params.size()){
-            throw new IllegalStateException("The number of argument between the request and the function does not match");
-        } else if (method_parameter.isEmpty() && request_params.isEmpty()) {
-            return (Model_view) method.invoke(object);
-        }else{
-            int numParams = request_params.size();
-            Object[] paramValues = new Object[numParams];
-            int i = 0;
-            for (String params: request_params.keySet()) {
-                paramValues[i] = request_params.get(params);
-                i++;
-            }
-            return  (Model_view) method.invoke(object,paramValues);
+
+    private Vector<Parameter> annotedMethodParameters(Method method)
+    {
+        Vector<Parameter> parameterVector = new Vector<>();
+        for (Parameter params:method.getParameters()) {
+            if(params.isAnnotationPresent(RequestParameter.class)) parameterVector.add(params);//maka ny parametre rehetra ka annoté oueh @RequestParameter
         }
+        return  parameterVector;
+    }
+
+    private Class<?>[] parametersClass(Vector<Parameter> parameters){
+        if(parameters.isEmpty()) return null;
+        Class<?>[] classes = new Class[parameters.size()];
+        int i = 0;
+        for(Parameter params:parameters){
+            classes[i] = params.getType();
+            i++;
+        }
+        return classes;
+    }
+    private Class<?>[] parametersClass(Parameter[] parameters){
+        if(parameters.length==0) return null;
+        Class<?>[] classes = new Class[parameters.length];
+        int i = 0;
+        for (Parameter params:parameters){
+            classes[i] = params.getType();//mametraka anaty tableau ny class correspondant a chaque parametre
+            i++;
+        }
+        return classes;
     }
 
     @Override
@@ -253,7 +293,7 @@ public class FrontServlet extends HttpServlet {
     }
 
     public static void main(String[] args) {
-       //Set<Class>classSet = Loader.findAllClasses("etu2074.framework.controller");
+        //Set<Class>classSet = Loader.findAllClasses("etu2074.framework.controller");
         //System.out.println(classSet);
     }
 }

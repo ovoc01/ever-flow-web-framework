@@ -6,6 +6,6 @@ import java.sql.Connection;
 
 public class Connnection {
     public static Connection pgCon(){
-        return MyConnection.initPgCon("localhost","5432","postgres","pixel","covid");
+        return MyConnection.initPgCon("localhost","5432","rakotoharisoa","pixel","covid");
     }
 }

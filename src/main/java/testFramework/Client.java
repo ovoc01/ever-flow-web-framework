@@ -4,11 +4,12 @@ import com.ovoc01.dao.annotation.Column;
 import com.ovoc01.dao.annotation.PrimaryKey;
 import com.ovoc01.dao.annotation.Tables;
 import com.ovoc01.dao.java.BddObject;
-import etu2074.framework.controller.Model_view;
-import etu2074.framework.url.Link;
-import jakarta.servlet.http.HttpServletRequest;
+import etu2074.framework.annotations.RequestParameter;
+import etu2074.framework.controller.ModelView;
+import etu2074.framework.annotations.Link;
 import testFramework.connection.Connnection;
 
+import java.sql.Connection;
 import java.util.LinkedList;
 @Tables(name = "patient")
 public class Client extends BddObject {
@@ -54,27 +55,43 @@ public class Client extends BddObject {
     }
 
     public Client(){
-
+        super();
     }
 
     @Link(url="listClient")
-    public Model_view clientList() throws Exception {
-        Model_view model_view = new Model_view("Hello.jsp");
+    public ModelView clientList() throws Exception {
+        ModelView model_view = new ModelView("Hello.jsp");
         LinkedList<Client> listClient = select(Connnection.pgCon());
         model_view.addItem("listClient",listClient);
         return model_view;
     }
 
-    @Link(url="insertClient",method = "POST")
-    public Model_view insert(HttpServletRequest request) throws Exception{
-        System.out.println(request);
-        return new Model_view("Test.jsp");
+    @Link(url="testMethod")
+    public ModelView andrana(String bogos, String sipa){
+        System.out.println(bogos+" sy "+sipa);
+        return new ModelView("Test.jsp");
     }
 
-    @Link(url="testMethod")
-    public Model_view andrana(String bogos,String sipa){
-        System.out.println(bogos+" sy "+sipa);
-        return new Model_view("Test.jsp");
+    @Link(url = "insert-client")
+    public ModelView trying() throws Exception {
+        Connection c = Connnection.pgCon();
+        insert(c);
+        c.commit();
+        String message = "insert successfully";
+        ModelView modelView = new ModelView("Test.jsp");
+        modelView.addItem("message",message);
+        return modelView;
     }
+
+    @Link(url = "sprint8")
+    public ModelView sprint_8(@RequestParameter(name="bonjour") String bonjour){
+        System.out.println(bonjour);
+        String message = "insert successfully";
+        ModelView modelView = new ModelView("Test.jsp");
+        modelView.addItem("message",message);
+        return modelView;
+    }
+
+
 
 }

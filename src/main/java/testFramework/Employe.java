@@ -1,22 +1,19 @@
 package testFramework;
 
-import etu2074.framework.controller.Model_view;
-import etu2074.framework.url.Link;
+import etu2074.framework.controller.ModelView;
+import etu2074.framework.annotations.Link;
 
 public class Employe {
     @Link(url = "try")
-    public Model_view controller(){
+    public ModelView controller(){
         double i = 0;
-        Model_view model_view = new Model_view("Hello.jsp");
+        ModelView model_view = new ModelView("Hello.jsp");
         model_view.addItem("number",i);
         return model_view;
     }
 
     @Link(url="try/select")
-    public Model_view select (){
+    public ModelView select (){
         return null;
-    }
-    public static <T> T dynamicCast(Object obj, Class<T> cls) {
-        return cls.cast(obj);
     }
 }
