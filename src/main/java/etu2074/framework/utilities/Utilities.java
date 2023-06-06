@@ -16,5 +16,11 @@ public  class Utilities {
         matchingType.put("java.lang.Double","java.lang.Double");
         matchingType.put("java.lang.Float","java.lang.Float");
     }
-
+    public static String createSetter(String field) {
+        return "set" + capitalizeFirstLetter(field);
+    }
+    public static String capitalizeFirstLetter(String input) {
+        String var10000 = input.substring(0, 1).toUpperCase();
+        return var10000 + input.substring(1);
+    }
 }

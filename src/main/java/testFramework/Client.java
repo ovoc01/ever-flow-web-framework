@@ -1,5 +1,6 @@
 package testFramework;
 
+
 import com.ovoc01.dao.annotation.Column;
 import com.ovoc01.dao.annotation.PrimaryKey;
 import com.ovoc01.dao.annotation.Tables;
@@ -7,6 +8,7 @@ import com.ovoc01.dao.java.BddObject;
 import etu2074.framework.annotations.RequestParameter;
 import etu2074.framework.controller.ModelView;
 import etu2074.framework.annotations.Link;
+import etu2074.framework.upload.FileUpload;
 import testFramework.connection.Connnection;
 
 import java.sql.Connection;
@@ -21,6 +23,16 @@ public class Client extends BddObject {
     String date_naissance;
     @Column
     String entrance;
+
+    FileUpload picture;
+
+    public FileUpload getPicture() {
+        return picture;
+    }
+
+    public void setPicture(FileUpload picture) {
+        this.picture = picture;
+    }
 
     public String getId() {
         return id;
@@ -92,6 +104,9 @@ public class Client extends BddObject {
         return modelView;
     }
 
-
-
+    @Link(url = "fileUpload")
+    public ModelView testUpload(){
+        System.out.println(picture.getNom());
+        return new ModelView("Test.jsp");
+    }
 }

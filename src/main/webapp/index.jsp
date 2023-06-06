@@ -8,11 +8,12 @@
 <h1><%= "Hello World!" %>
 </h1>
 <br/>
-<form action="dept-save" method="post">
+<form action="fileUpload" method="post" enctype="multipart/form-data">
     <input type="text" name="nom"><br>
     <br>
-    <input type="text" name="chef"><br><br>
-
+    <input type="text" name="entrance"><br><br>
+    <br>
+    <input type="file" name="picture"><br><br>
     <input type="submit" value="submit">
 </form>
 </body>

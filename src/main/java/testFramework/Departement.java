@@ -18,6 +18,16 @@ public class Departement extends BddObject {
     @Column
     String chef;
 
+    String redirect;
+
+    public String getRedirect() {
+        return redirect;
+    }
+
+    public void setRedirect(String redirect) {
+        this.redirect = redirect;
+    }
+
     public Integer getId() {
         return id;
     }
@@ -54,6 +64,15 @@ public class Departement extends BddObject {
         String message = "insert successfully";
         ModelView modelView = new ModelView("Test.jsp");
         modelView.addItem("message",message);
+        return modelView;
+    }
+
+    @Link(url="testing")
+    public ModelView daniel(){
+        ModelView modelView = new ModelView();
+        System.out.println("fdkjfk");
+        modelView.addItem("redirect",getRedirect());
+        modelView.setView("Home.jsp");
         return modelView;
     }
 }
