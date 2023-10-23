@@ -1,1 +1,0 @@
-<h1><%=(String)request.getAttribute("redirect")%></h1>
