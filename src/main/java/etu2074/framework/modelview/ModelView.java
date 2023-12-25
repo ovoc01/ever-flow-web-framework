@@ -1,6 +1,5 @@
-package etu2074.framework.controller;
+package etu2074.framework.modelview;
 
-import java.awt.*;
 import java.util.HashMap;
 import java.util.LinkedList;
 

@@ -2,13 +2,24 @@ package etu2074.framework.mapping;
 
 import java.lang.reflect.Method;
 
+import etu2074.framework.annotations.apienum.RequestType;
+
 public class Mapping {
     String class_name;
     Method method;
     private Class<?> aClass;
+    private RequestType type;
 
     public Class<?> getaClass() {
         return aClass;
+    }
+
+    public void setType(RequestType type) {
+        this.type = type;
+    }
+
+    public RequestType getType() {
+        return type;
     }
 
     public void setaClass(Class<?> aClass) {

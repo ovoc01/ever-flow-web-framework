@@ -1,2 +1,11 @@
-package etu2074.framework.annotations;public @interface Authentification {
+package etu2074.framework.annotations;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+@Target({ ElementType.METHOD })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Authentification {
+    String auth() ;
 }
