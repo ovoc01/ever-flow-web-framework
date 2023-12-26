@@ -23,8 +23,9 @@ public class Deployer {
     InputStream inputStream = mainClass.getClassLoader().getResourceAsStream("ever-flow.properties");
     properties.load(inputStream);
     ServerProps serverProps = loadServerProps(properties);
-    run(serverProps);
-
+    String warLocation = properties.getProperty("server.warLocation");
+    TomcatEmbedded embedded = TomcatEmbedded.getInstance(Integer.parseInt(serverProps.getPort()), serverProps.getContextPath(),warLocation);
+    embedded.start();
   }
 
   public static ServerProps loadServerProps(Properties properties) {
